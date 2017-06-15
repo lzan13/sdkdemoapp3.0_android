@@ -286,6 +286,25 @@
             android:screenOrientation="portrait"
             android:theme="@style/horizontal_slide" />
 
+        <!--公众号相关界面-->
+        <activity
+            android:name=".pa.PAAllListActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/horizontal_slide"/>
+        <activity
+            android:name=".pa.PAChatActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/horizontal_slide"/>
+        <activity
+            android:name=".pa.PADetailsActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/horizontal_slide"/>
+        <activity
+            android:name=".pa.PAFollowListActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/horizontal_slide"/>
+        <!--公众号相关界面 end-->
+
         <!-- 红包相关Activity start -->
         <!-- 发红包 -->
         <activity
@@ -475,6 +494,10 @@
         <meta-data
             android:name="EASEMOB_APPKEY"
             android:value="easemob-demo#chatdemoui" />
+
+        <!--<meta-data-->
+            <!--android:name="EASEMOB_APPKEY"-->
+            <!--android:value="rocrok#koobot" />-->
         <!-- 声明sdk所需的service -->
         <service
             android:name="com.hyphenate.chat.EMChatService"

@@ -13,6 +13,7 @@
  */
 package com.hyphenate.chatuidemo.ui;
 
+import com.hyphenate.chatuidemo.pa.PAFollowListActivity;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -67,6 +68,7 @@ public class ContactListFragment extends EaseContactListFragment {
         headerView.findViewById(R.id.group_item).setOnClickListener(clickListener);
         headerView.findViewById(R.id.chat_room_item).setOnClickListener(clickListener);
         headerView.findViewById(R.id.robot_item).setOnClickListener(clickListener);
+        headerView.findViewById(R.id.pa_item).setOnClickListener(clickListener);
         listView.addHeaderView(headerView);
         //add loading view
         loadingView = LayoutInflater.from(getActivity()).inflate(R.layout.em_layout_loading_data, null);
@@ -193,7 +195,9 @@ public class ContactListFragment extends EaseContactListFragment {
                 //进入Robot列表页面
                 startActivity(new Intent(getActivity(), RobotsActivity.class));
                 break;
-
+            case R.id.pa_item:
+                startActivity(new Intent(getActivity(), PAFollowListActivity.class));
+                break;
             default:
                 break;
             }
@@ -234,7 +238,7 @@ public class ContactListFragment extends EaseContactListFragment {
 	/**
 	 * delete contact
 	 * 
-	 * @param toDeleteUser
+	 * @param tobeDeleteUser
 	 */
 	public void deleteContact(final EaseUser tobeDeleteUser) {
 		String st1 = getResources().getString(R.string.deleting);

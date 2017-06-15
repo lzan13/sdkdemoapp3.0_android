@@ -35,6 +35,7 @@ import com.hyphenate.chatuidemo.DemoApplication;
 import com.hyphenate.chatuidemo.DemoHelper;
 import com.hyphenate.chatuidemo.R;
 import com.hyphenate.chatuidemo.db.DemoDBManager;
+import com.hyphenate.chatuidemo.pa.PAFollowListActivity;
 import com.hyphenate.easeui.utils.EaseCommonUtils;
 
 /**
@@ -100,6 +101,11 @@ public class LoginActivity extends BaseActivity {
 		if (DemoHelper.getInstance().getCurrentUsernName() != null) {
 			usernameEditText.setText(DemoHelper.getInstance().getCurrentUsernName());
 		}
+		findViewById(R.id.btn_public_number).setOnClickListener(new View.OnClickListener() {
+			@Override public void onClick(View v) {
+				startActivity(new Intent(LoginActivity.this, PAFollowListActivity.class));
+			}
+		});
 	}
 
 	/**
