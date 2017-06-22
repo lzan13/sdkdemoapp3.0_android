@@ -4,11 +4,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     >
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/widget_toolbar"
+    <com.hyphenate.easeui.widget.EaseTitleBar
+        android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:background="@color/common_top_bar_blue"
+        android:background="@color/top_bar_normal_bg"
         />
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view"

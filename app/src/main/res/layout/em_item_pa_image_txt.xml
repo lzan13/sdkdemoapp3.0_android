@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    >
+    <TextView
+        android:id="@+id/timestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="8dp"
+        style="@style/chat_text_date_style"
+        />
+
+    <RelativeLayout
+        android:id="@+id/layout_pa_single_container"
+        android:layout_width="match_parent"
+        android:layout_height="192dp"
+        android:background="#f8f8f8"
+        android:padding="16dp"
+        >
+        <ImageView
+            android:id="@+id/img_pa_msg_photo"
+            android:layout_width="match_parent"
+            android:layout_height="192dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_launcher"
+            />
+        <TextView
+            android:id="@+id/text_pa_msg_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="#89232323"
+            android:padding="16dp"
+            android:text="@string/app_name"
+            android:textColor="@color/bottom_text_color_normal"
+            />
+
+    </RelativeLayout>
+    <!--公众号图文消息附带的多个子消息-->
+    <LinearLayout
+        android:id="@+id/layout_pa_sub_msg_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#f8f8f8"
+        android:orientation="vertical"
+        >
+
+    </LinearLayout>
+</LinearLayout>

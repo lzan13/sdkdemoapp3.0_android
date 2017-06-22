@@ -35,10 +35,12 @@ public class PAListAdapter extends RecyclerView.Adapter<PAListAdapter.PAViewHold
     @Override public void onBindViewHolder(PAViewHolder holder, final int position) {
         PAInfo info = list.get(position);
         holder.nameView.setText(info.getName());
+        holder.descriptionView.setText(info.getDescription());
+
         if (TextUtils.isEmpty(info.getLogo())) {
             holder.avatarView.setImageResource(R.drawable.em_groups_icon);
         } else {
-            Glide.with(context).load(info.getLogo()).crossFade().into(holder.avatarView);
+            Glide.with(context).load(info.getLogo()).crossFade().error(R.drawable.ease_groups_icon).into(holder.avatarView);
         }
         // 设置列表项点击监听
         holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -78,11 +80,13 @@ public class PAListAdapter extends RecyclerView.Adapter<PAListAdapter.PAViewHold
     static class PAViewHolder extends RecyclerView.ViewHolder {
         ImageView avatarView;
         TextView nameView;
+        TextView descriptionView;
 
         public PAViewHolder(View itemView) {
             super(itemView);
             avatarView = (ImageView) itemView.findViewById(R.id.img_avatar);
             nameView = (TextView) itemView.findViewById(R.id.text_name);
+            descriptionView = (TextView) itemView.findViewById(R.id.text_description);
         }
     }
 }

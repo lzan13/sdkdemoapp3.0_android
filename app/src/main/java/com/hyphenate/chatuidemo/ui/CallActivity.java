@@ -285,6 +285,7 @@ public class CallActivity extends BaseActivity {
                     1);   // playback rate (1.0 = normal playback, range 0.5 to 2.0)
             return id;
         } catch (Exception e) {
+            e.printStackTrace();
             return -1;
         }
     }

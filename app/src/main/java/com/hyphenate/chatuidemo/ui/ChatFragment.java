@@ -5,17 +5,22 @@ import android.content.ClipData;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.drawable.ColorDrawable;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.easemob.redpacketsdk.RPSendPacketCallback;
@@ -36,6 +41,10 @@ import com.hyphenate.chatuidemo.DemoHelper;
 import com.hyphenate.chatuidemo.R;
 import com.hyphenate.chatuidemo.domain.EmojiconExampleGroupData;
 import com.hyphenate.chatuidemo.domain.RobotUser;
+import com.hyphenate.chatuidemo.pa.PADetailsActivity;
+import com.hyphenate.chatuidemo.pa.PAInfo;
+import com.hyphenate.chatuidemo.pa.PAManager;
+import com.hyphenate.chatuidemo.widget.ChatRowPAImageTxt;
 import com.hyphenate.chatuidemo.widget.ChatRowVoiceCall;
 import com.hyphenate.easeui.EaseConstant;
 import com.hyphenate.easeui.ui.EaseChatFragment;
@@ -50,6 +59,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHelper{
 
@@ -70,6 +81,8 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
     private static final int MESSAGE_TYPE_RECV_VOICE_CALL = 2;
     private static final int MESSAGE_TYPE_SENT_VIDEO_CALL = 3;
     private static final int MESSAGE_TYPE_RECV_VIDEO_CALL = 4;
+    // 公众号图文信息
+    private static final int MESSAGE_TYPE_RECV_PA = 5;
 
     //red packet code : 红包功能使用的常量
     private static final int MESSAGE_TYPE_RECV_RED_PACKET = 5;
@@ -85,10 +98,34 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
      * if it is chatBot 
      */
     private boolean isRobot;
-    
+
+    private ChatActivity activity;
+    private String currentUser;
+    // 公众号相关
+    private String paid;
+    private PAInfo paInfo = new PAInfo();
+    private View paKeyboardBtn;
+    private LinearLayout paMenuContainer;
+    private View inputMenuContainer;
+    private boolean isShowMenu = false;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return super.onCreateView(inflater, container, savedInstanceState);
+    }
+
+    @Override public void onActivityCreated(Bundle savedInstanceState) {
+        activity = (ChatActivity) getActivity();
+        paid = getArguments().getString("paid");
+        currentUser = EMClient.getInstance().getCurrentUser();
+        super.onActivityCreated(savedInstanceState);
+    }
+
+    @Override protected void initView() {
+        super.initView();
+        paKeyboardBtn = inputMenu.findViewById(R.id.btn_pa_keyboard);
+        paMenuContainer = (LinearLayout) inputMenu.findViewById(R.id.layout_pa_container);
+        inputMenuContainer = inputMenu.findViewById(R.id.layout_input_container);
     }
 
     @Override
@@ -100,7 +137,36 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
                 isRobot = true;
             }
         }
-        super.setUpView();
+        if (chatType == Constant.CHATTYPE_PA) {
+            titleBar.setTitle(paid);
+            titleBar.setRightImageResource(R.drawable.ease_default_avatar);
+            titleBar.setRightLayoutClickListener(new OnClickListener() {
+                @Override public void onClick(View v) {
+                    startActivity(new Intent(activity, PADetailsActivity.class).putExtra("paid", paid));
+                }
+            });
+            onConversationInit();
+            onMessageListInit();
+            setRefreshLayoutListener();
+
+            paKeyboardBtn.setVisibility(View.VISIBLE);
+            isShowMenu = true;
+            changePAMenuORInputMenu();
+            paKeyboardBtn.setOnClickListener(new OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (isShowMenu) {
+                        isShowMenu = false;
+                    } else {
+                        isShowMenu = true;
+                    }
+                    changePAMenuORInputMenu();
+                }
+            });
+            // 从服务器更新公众号信息
+            updatePADetailsFromServer();
+        } else {
+            super.setUpView();
+        }
         // set click listener
         titleBar.setLeftLayoutClickListener(new OnClickListener() {
 
@@ -135,11 +201,141 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
             });
         }
     }
-    
+
+    /**
+     * 切换公众号菜单和输入框
+     */
+    private void changePAMenuORInputMenu() {
+        if (isShowMenu) {
+            paMenuContainer.setVisibility(View.VISIBLE);
+            inputMenuContainer.setVisibility(View.GONE);
+        }else{
+            paMenuContainer.setVisibility(View.GONE);
+            inputMenuContainer.setVisibility(View.VISIBLE);
+        }
+    }
+
+    /**
+     * 装载公众号菜单
+     */
+    private void loadPAMenuContainer() {
+        if (paInfo == null || paInfo.getMenu() == null) {
+            isShowMenu = false;
+            changePAMenuORInputMenu();
+            return;
+        }
+        JSONArray array = paInfo.getMenu();
+        for (int i = 0; i < array.length(); i++) {
+            final JSONObject menuObject = array.optJSONObject(i);
+            // 创建菜单按钮并添加到菜单布局中
+            Button btn = new Button(activity);
+            btn.setText(menuObject.optString("title"));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.weight = 1;
+            btn.setLayoutParams(lp);
+            paMenuContainer.addView(btn);
+
+            // 设置公众号菜单点击事件
+            btn.setOnClickListener(new OnClickListener() {
+                @Override public void onClick(View view) {
+                    // 检查菜单项是否有子菜单
+                    if(menuObject.has("action")){
+                        if (menuObject.optString("action").equals("auto_msg")) {
+                            new Thread(new Runnable() {
+                                @Override public void run() {
+                                    // 发送自定义菜单事件到服务器
+                                    PAManager.getInstance().sendPAMenuAutoMessageToServer(paid, currentUser, menuObject.optString("eventId"));
+                                }
+                            }).start();
+                        } else if(menuObject.optString("action").equals("link")) {
+                            // 使用系统浏览器打开网址
+                            Uri uri = Uri.parse(menuObject.optString("url"));
+                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                            startActivity(intent);
+                        }
+                    }else{
+                        loadPASubMenu(view, menuObject.optJSONArray("subMenu"));
+                    }
+                }
+            });
+        }
+        isShowMenu = true;
+        changePAMenuORInputMenu();
+    }
+
+    /**
+     * 加载公众号子菜单，这里使用 PopupWindow 实现弹出子菜单列表
+     */
+    private void loadPASubMenu(View view, JSONArray array) {
+        // 创建 PopupWindow
+        final PopupWindow popupWindow = new PopupWindow();
+        // 装载子菜单的布局
+        LinearLayout linearLayout = new LinearLayout(activity);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        // 循环添加子菜单，同时设置子菜单的点击事件
+        for (int i = 0; i < array.length(); i++) {
+            final JSONObject subMenuObject = array.optJSONObject(i);
+            Button btn = new Button(activity);
+            btn.setText(subMenuObject.optString("title"));
+            linearLayout.addView(btn);
+            linearLayout.setBackgroundResource(R.drawable.em_button_bg);
+            btn.setOnClickListener(new OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (subMenuObject.optString("action").equals("auto_msg")) {
+                        new Thread(new Runnable() {
+                            @Override public void run() {
+                                // 发送自定义菜单事件到服务器
+                                PAManager.getInstance()
+                                        .sendPAMenuAutoMessageToServer(paid, currentUser, subMenuObject.optString("eventId"));
+                            }
+                        }).start();
+                    } else if (subMenuObject.optString("action").equals("link")) {
+                        // 使用系统浏览器打开网址
+                        Uri uri = Uri.parse(subMenuObject.optString("url"));
+                        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                        startActivity(intent);
+                    }
+                    popupWindow.dismiss();
+                }
+            });
+        }
+        popupWindow.setContentView(linearLayout);
+        popupWindow.setWidth(view.getWidth());
+        popupWindow.setHeight(LinearLayout.LayoutParams.WRAP_CONTENT);
+        // 设置弹出框可以获取焦点
+        popupWindow.setFocusable(true);
+        // 设置弹出菜单触摸空白处消失，必须和 Background 配合使用
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(0x000000));
+        // 显示在指定位置
+        popupWindow.showAtLocation(paMenuContainer, Gravity.BOTTOM | Gravity.LEFT, paMenuContainer.getLeft()+view.getLeft(), view.getHeight());
+    }
+
+    /**
+     * 从服务器更新公众号信息
+     */
+    private void updatePADetailsFromServer() {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                paInfo = PAManager.getInstance().getPADetailsFullFromServer(paid);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        loadPAMenuContainer();
+                        titleBar.setTitle(paInfo.getName());
+                    }
+                });
+            }
+        }).start();
+    }
+
     @Override
     protected void registerExtendMenuItem() {
         //use the menu in base class
         super.registerExtendMenuItem();
+        if (chatType == Constant.CHATTYPE_PA) {
+            // 公众号不需要其他的扩展
+            return;
+        }
         //extend menu items
         inputMenu.registerExtendMenuItem(R.string.attach_video, R.drawable.em_chat_video_selector, ITEM_VIDEO, extendMenuItemClickListener);
         inputMenu.registerExtendMenuItem(R.string.attach_file, R.drawable.em_chat_file_selector, ITEM_FILE, extendMenuItemClickListener);
@@ -420,6 +616,8 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
                 } else if (message.getBooleanAttribute(RPConstant.MESSAGE_ATTR_IS_RED_PACKET_ACK_MESSAGE, false)) {
                     //领取红包消息
                     return message.direct() == EMMessage.Direct.RECEIVE ? MESSAGE_TYPE_RECV_RED_PACKET_ACK : MESSAGE_TYPE_SEND_RED_PACKET_ACK;
+                } else if (message.getBooleanAttribute("em_pa_msg", false) && message.getStringAttribute("type", "").equals("img_txt")) {
+                    return MESSAGE_TYPE_RECV_PA;
                 }
                 //end of red packet code
             }
@@ -441,6 +639,8 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
                     return new ChatRowRedPacket(getActivity(), message, position, adapter);
                 } else if (message.getBooleanAttribute(RPConstant.MESSAGE_ATTR_IS_RED_PACKET_ACK_MESSAGE, false)) {//红包回执消息
                     return new ChatRowRedPacketAck(getActivity(), message, position, adapter);
+                } else if (message.getBooleanAttribute("em_pa_msg", false) && message.getStringAttribute("type", "").equals("img_txt")) {
+                    return new ChatRowPAImageTxt(activity, message, position, adapter);
                 }
                 //end of red packet code
             }
