@@ -9,11 +9,13 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import com.hyphenate.chat.EMClient;
+import com.hyphenate.chatuidemo.DemoHelper;
 import com.hyphenate.chatuidemo.R;
 import com.hyphenate.chatuidemo.ui.BaseActivity;
 import com.hyphenate.easeui.widget.EaseTitleBar;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by lzan13 on 2017/6/13.
@@ -44,18 +46,19 @@ public class PAFollowListActivity extends BaseActivity {
         activity = this;
 
         currentUser = EMClient.getInstance().getCurrentUser();
-
-        followList = new ArrayList<>();
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
         layoutManager = new LinearLayoutManager(activity);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(layoutManager);
 
+        loadFollowPAList();
         adapter = new PAListAdapter(activity, followList);
         recyclerView.setAdapter(adapter);
 
-        updateDataFromServer();
+        if (followList.size() == 0) {
+            updateDataFromServer();
+        }
         setItemClickListener();
         initTitleBarClick();
     }
@@ -97,8 +100,8 @@ public class PAFollowListActivity extends BaseActivity {
     private void updateDataFromServer() {
         new Thread(new Runnable() {
             @Override public void run() {
-                followList.clear();
-                followList.addAll(PAManager.getInstance().getPAFollowListFromServer(currentUser, 1, 100));
+                Map<String, PAInfo> map = PAManager.getInstance().getPAFollowListFromServer(currentUser, 1, 100);
+                DemoHelper.getInstance().saveFollowPAList(map);
                 handler.sendMessage(handler.obtainMessage());
             }
         }).start();
@@ -111,10 +114,28 @@ public class PAFollowListActivity extends BaseActivity {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * 加载公众号列表
+     */
+    private void loadFollowPAList() {
+        if (followList == null) {
+            followList = new ArrayList<>();
+        }
+        followList.clear();
+        followList.addAll(DemoHelper.getInstance().getFollowPAMap().values());
+    }
+
     Handler handler = new Handler() {
         @Override public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            loadFollowPAList();
             refresh();
         }
     };
+
+    @Override protected void onResume() {
+        super.onResume();
+        loadFollowPAList();
+        refresh();
+    }
 }

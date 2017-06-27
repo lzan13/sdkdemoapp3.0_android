@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.hyphenate.chat.EMClient;
+import com.hyphenate.chatuidemo.DemoHelper;
 import com.hyphenate.chatuidemo.R;
 import com.hyphenate.chatuidemo.ui.BaseActivity;
 import com.hyphenate.chatuidemo.ui.ChatActivity;
@@ -58,8 +59,7 @@ public class PADetailsActivity extends BaseActivity {
         currentUser = EMClient.getInstance().getCurrentUser();
 
         paid = getIntent().getStringExtra("paid");
-
-        paInfo = new PAInfo();
+        paInfo = DemoHelper.getInstance().getFollowPAMap().get(paid);
 
         avatarView = (ImageView) findViewById(R.id.img_avatar);
         nameView = (TextView) findViewById(R.id.text_name);
@@ -73,10 +73,12 @@ public class PADetailsActivity extends BaseActivity {
         unFollowBtn.setOnClickListener(viewListener);
         startChatBtn.setOnClickListener(viewListener);
 
+        loadFollowPAList();
+        if (paInfo == null) {
+            updatePADetailsFromServer();
+            paInfo = new PAInfo();
+        }
         initTitleBarClick();
-
-        updatePADetailsFromServer();
-
         refresh();
     }
 
@@ -126,6 +128,7 @@ public class PADetailsActivity extends BaseActivity {
             @Override public void run() {
                 boolean result = PAManager.getInstance().addPAFollowersToServer(paid, currentUser);
                 if (result) {
+                    DemoHelper.getInstance().savePA(paInfo);
                     updatePADetailsFromServer();
                 }
             }
@@ -140,6 +143,7 @@ public class PADetailsActivity extends BaseActivity {
             @Override public void run() {
                 boolean result = PAManager.getInstance().removePAFollowersToServer(paid, currentUser);
                 if (result) {
+                    DemoHelper.getInstance().deletePA(paInfo);
                     updatePADetailsFromServer();
                 }
             }
@@ -152,8 +156,6 @@ public class PADetailsActivity extends BaseActivity {
     private void updatePADetailsFromServer() {
         new Thread(new Runnable() {
             @Override public void run() {
-                followList.clear();
-                followList.addAll(PAManager.getInstance().getPAFollowListFromServer(currentUser, 1, 1000));
                 paInfo = PAManager.getInstance().getPADetailsFromServer(paid);
                 handler.sendMessage(handler.obtainMessage());
             }
@@ -189,9 +191,18 @@ public class PADetailsActivity extends BaseActivity {
         }
     }
 
+    private void loadFollowPAList() {
+        if (followList == null) {
+            followList = new ArrayList<>();
+        }
+        followList.clear();
+        followList.addAll(DemoHelper.getInstance().getFollowPAMap().values());
+    }
+
     Handler handler = new Handler() {
         @Override public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            loadFollowPAList();
             refresh();
         }
     };

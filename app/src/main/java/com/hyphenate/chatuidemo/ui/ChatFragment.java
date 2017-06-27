@@ -138,7 +138,14 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
             }
         }
         if (chatType == Constant.CHATTYPE_PA) {
-            titleBar.setTitle(paid);
+            paInfo = DemoHelper.getInstance().getFollowPAMap().get(paid);
+            if (paInfo == null) {
+                // 从服务器更新公众号信息
+                updatePADetailsFromServer();
+                titleBar.setTitle(paid);
+            }else{
+                titleBar.setTitle(paInfo.getName());
+            }
             titleBar.setRightImageResource(R.drawable.ease_default_avatar);
             titleBar.setRightLayoutClickListener(new OnClickListener() {
                 @Override public void onClick(View v) {
@@ -150,8 +157,10 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
             setRefreshLayoutListener();
 
             paKeyboardBtn.setVisibility(View.VISIBLE);
-            isShowMenu = true;
-            changePAMenuORInputMenu();
+            if (paInfo.getMenu() != null) {
+                isShowMenu = true;
+                changePAMenuORInputMenu();
+            }
             paKeyboardBtn.setOnClickListener(new OnClickListener() {
                 @Override public void onClick(View v) {
                     if (isShowMenu) {
@@ -162,8 +171,6 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
                     changePAMenuORInputMenu();
                 }
             });
-            // 从服务器更新公众号信息
-            updatePADetailsFromServer();
         } else {
             super.setUpView();
         }
@@ -318,12 +325,15 @@ public class ChatFragment extends EaseChatFragment implements EaseChatFragmentHe
         new Thread(new Runnable() {
             @Override public void run() {
                 paInfo = PAManager.getInstance().getPADetailsFullFromServer(paid);
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        loadPAMenuContainer();
-                        titleBar.setTitle(paInfo.getName());
-                    }
-                });
+                if (paInfo != null) {
+                    DemoHelper.getInstance().savePA(paInfo);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            loadPAMenuContainer();
+                            titleBar.setTitle(paInfo.getName());
+                        }
+                    });
+                }
             }
         }).start();
     }

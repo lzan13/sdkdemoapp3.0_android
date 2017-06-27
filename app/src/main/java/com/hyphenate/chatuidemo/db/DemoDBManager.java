@@ -10,6 +10,8 @@ import com.hyphenate.chatuidemo.DemoApplication;
 import com.hyphenate.chatuidemo.domain.InviteMessage;
 import com.hyphenate.chatuidemo.domain.InviteMessage.InviteMesageStatus;
 import com.hyphenate.chatuidemo.domain.RobotUser;
+import com.hyphenate.chatuidemo.pa.PADetailsActivity;
+import com.hyphenate.chatuidemo.pa.PAInfo;
 import com.hyphenate.easeui.domain.EaseUser;
 import com.hyphenate.easeui.utils.EaseCommonUtils;
 import com.hyphenate.util.HanziToPinyin;
@@ -19,6 +21,8 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 public class DemoDBManager {
     static private DemoDBManager dbMgr = new DemoDBManager();
@@ -373,4 +377,135 @@ public class DemoDBManager {
 		}
 		return users;
 	}
+
+    /**
+     * 公众号相关的操作
+     */
+    synchronized public void saveFollowPAList(List<PAInfo> list) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        if (db.isOpen()) {
+            db.delete(PADao.TB_NAME, null, null);
+            for (PAInfo info: list) {
+                ContentValues values = new ContentValues();
+                values.put(PADao.COL_PAID, info.getPaid());
+                values.put(PADao.COL_NAME, info.getName());
+                values.put(PADao.COL_DESCRIPTION, info.getDescription());
+                values.put(PADao.COL_LOGO, info.getLogo());
+                if (info.getAgentUser() != null) {
+                    values.put(PADao.COL_AGENT_USER, info.getAgentUser());
+                }
+                if (info.getMenu() != null) {
+                    values.put(PADao.COL_MENU, info.getMenu().toString());
+                }
+                db.replace(PADao.TB_NAME, null, values);
+            }
+        }
+    }
+
+    /**
+     * 保存单个公众号
+     * @param info 要保存的公众号信息
+     */
+    synchronized public void savePA(PAInfo info) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        if (db.isOpen()) {
+            ContentValues values = new ContentValues();
+            values.put(PADao.COL_PAID, info.getPaid());
+            values.put(PADao.COL_NAME, info.getName());
+            values.put(PADao.COL_DESCRIPTION, info.getDescription());
+            values.put(PADao.COL_LOGO, info.getLogo());
+            if (info.getAgentUser() != null) {
+                values.put(PADao.COL_AGENT_USER, info.getAgentUser());
+            }
+            if (info.getMenu() != null) {
+                values.put(PADao.COL_MENU, info.getMenu().toString());
+            }
+            db.replace(PADao.TB_NAME, null, values);
+        }
+    }
+
+    /**
+     * 删除指定公众号
+     *
+     * @param paid 要删除的公众号 id
+     */
+    synchronized public void deletePA(String paid) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        if (db.isOpen()) {
+            db.delete(PADao.TB_NAME, PADao.COL_PAID + "=?", new String[]{paid});
+        }
+    }
+
+    /**
+     * 获取关注的公众号列表
+     */
+    synchronized public Map<String, PAInfo> getFollowPAList() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Map<String, PAInfo> pas = new Hashtable<String, PAInfo>();
+        if (db.isOpen()) {
+            Cursor cursor = db.rawQuery("select * from " + PADao.TB_NAME /* + " desc" */, null);
+            while (cursor.moveToNext()) {
+                String paid = cursor.getString(cursor.getColumnIndex(PADao.COL_PAID));
+                String name = cursor.getString(cursor.getColumnIndex(PADao.COL_NAME));
+                String description = cursor.getString(cursor.getColumnIndex(PADao.COL_DESCRIPTION));
+                String logo = cursor.getString(cursor.getColumnIndex(PADao.COL_LOGO));
+                String agentUser = cursor.getString(cursor.getColumnIndex(PADao.COL_AGENT_USER));
+                String menu = cursor.getString(cursor.getColumnIndex(PADao.COL_MENU));
+                PAInfo info = new PAInfo();
+                info.setPaid(paid);
+                info.setName(name);
+                info.setDescription(description);
+                info.setLogo(logo);
+                info.setAgentUser(agentUser);
+                try {
+                    if (!TextUtils.isEmpty(menu)) {
+                        JSONArray array = new JSONArray(menu);
+                        info.setMenu(array);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                pas.put(paid, info);
+            }
+            cursor.close();
+        }
+        return pas;
+    }
+
+    /**
+     * 获取关注的公众号列表
+     */
+    synchronized public Map<String, PAInfo> getFollowPAAgentUserMap() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Map<String, PAInfo> pas = new Hashtable<String, PAInfo>();
+        if (db.isOpen()) {
+            Cursor cursor = db.rawQuery("select * from " + PADao.TB_NAME /* + " desc" */, null);
+            while (cursor.moveToNext()) {
+                String paid = cursor.getString(cursor.getColumnIndex(PADao.COL_PAID));
+                String name = cursor.getString(cursor.getColumnIndex(PADao.COL_NAME));
+                String description = cursor.getString(cursor.getColumnIndex(PADao.COL_DESCRIPTION));
+                String logo = cursor.getString(cursor.getColumnIndex(PADao.COL_LOGO));
+                String agentUser = cursor.getString(cursor.getColumnIndex(PADao.COL_AGENT_USER));
+                String menu = cursor.getString(cursor.getColumnIndex(PADao.COL_MENU));
+                PAInfo info = new PAInfo();
+                info.setPaid(paid);
+                info.setName(name);
+                info.setDescription(description);
+                info.setLogo(logo);
+                info.setAgentUser(agentUser);
+                try {
+                    if (!TextUtils.isEmpty(menu)) {
+                        JSONArray array = new JSONArray(menu);
+                        info.setMenu(array);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                pas.put(agentUser, info);
+            }
+            cursor.close();
+        }
+        return pas;
+    }
+
 }

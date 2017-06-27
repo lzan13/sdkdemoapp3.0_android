@@ -44,16 +44,14 @@ android {
 
 dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
-
     compile project(':redpacketlibrary')
     compile project(':easeui')
-
     compile 'com.parse:parse-android:1.13.1'
     compile 'com.android.support:multidex:1.0.1'
     // square 家族的网络加载库 Retrofit
     compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:recyclerview-v7:25.3.1'
-
     // ============== fabric start
     //    compile('com.crashlytics.sdk.android:crashlytics:2.6.1@aar') {
     //        transitive = true;

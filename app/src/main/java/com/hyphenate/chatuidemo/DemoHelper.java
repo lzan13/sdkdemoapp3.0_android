@@ -31,11 +31,13 @@ import com.hyphenate.chat.EMOptions;
 import com.hyphenate.chat.EMTextMessageBody;
 import com.hyphenate.chatuidemo.db.DemoDBManager;
 import com.hyphenate.chatuidemo.db.InviteMessgeDao;
+import com.hyphenate.chatuidemo.db.PADao;
 import com.hyphenate.chatuidemo.db.UserDao;
 import com.hyphenate.chatuidemo.domain.EmojiconExampleGroupData;
 import com.hyphenate.chatuidemo.domain.InviteMessage;
 import com.hyphenate.chatuidemo.domain.InviteMessage.InviteMesageStatus;
 import com.hyphenate.chatuidemo.domain.RobotUser;
+import com.hyphenate.chatuidemo.pa.PAInfo;
 import com.hyphenate.chatuidemo.parse.UserProfileManager;
 import com.hyphenate.chatuidemo.receiver.CallReceiver;
 import com.hyphenate.chatuidemo.ui.ChatActivity;
@@ -80,7 +82,10 @@ public class DemoHelper {
     protected static final String TAG = "DemoHelper";
     
 	private EaseUI easeUI;
-	
+
+    private Map<String, PAInfo> followPAMap;
+    private Map<String, PAInfo> followAgentUserMap;
+
     /**
      * EMEventListener
      */
@@ -1048,7 +1053,73 @@ public class DemoHelper {
 	public DemoModel getModel(){
         return (DemoModel) demoModel;
     }
-	
+
+    /**
+     * 保存关注的公众号列表
+     * @param map
+     */
+    public void saveFollowPAList(Map<String, PAInfo> map) {
+        if (map == null) {
+            if(followPAMap != null){
+                followPAMap.clear();
+            }
+        }
+        followPAMap = map;
+        PADao dao = new PADao();
+        dao.saveFollowPAList(new ArrayList<PAInfo>(followPAMap.values()));
+    }
+
+    /**
+     * 保存一个公众号
+     * @param info
+     */
+    public void savePA(PAInfo info) {
+        if (followPAMap != null) {
+            followPAMap.put(info.getPaid(), info);
+        }
+        if (followAgentUserMap != null) {
+            followAgentUserMap.put(info.getAgentUser(), info);
+        }
+        PADao dao = new PADao();
+        dao.savePA(info);
+    }
+    /**
+     * 删除公众号
+     * @param info
+     */
+    public void deletePA(PAInfo info) {
+        if (followPAMap != null) {
+            followPAMap.remove(info.getPaid());
+        }
+        if (followAgentUserMap != null) {
+            followAgentUserMap.remove(info.getAgentUser());
+        }
+        PADao dao = new PADao();
+        dao.deletePA(info.getPaid());
+    }
+
+    /**
+     * 获取关注的公众号列表
+     */
+    public Map<String, PAInfo> getFollowPAMap() {
+        if (followPAMap == null) {
+            PADao dao = new PADao();
+            followPAMap = dao.getFollowPAMap();
+        }
+        return followPAMap;
+    }
+
+    /**
+     * 获取关注的公众号所属 IM 账户
+     */
+    public Map<String, PAInfo> getFollowPAAgentUserMap() {
+        if (followAgentUserMap == null) {
+            PADao dao = new PADao();
+            followAgentUserMap = dao.getFollowPAAgentUserMap();
+        }
+        return followAgentUserMap;
+    }
+
 	/**
 	 * update contact list
 	 * 

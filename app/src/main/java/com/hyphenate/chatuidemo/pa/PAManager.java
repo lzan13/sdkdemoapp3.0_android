@@ -5,7 +5,9 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.util.EMLog;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -52,7 +54,7 @@ public class PAManager {
         }
         // 获取当前登录用户 token
         //accessToken = EMClient.getInstance().getAccessToken();
-        accessToken = "1e793309-7310-4194-9b9e-51009865880a";
+        accessToken = "e783b482-ed6c-49c8-b69b-235c1d868764";
 
         // 自定义拦截器，在拦截器中添加请求 token 及其他请求头参数
         OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(new Interceptor() {
@@ -258,8 +260,8 @@ public class PAManager {
      * @param pageNum 第几页
      * @param pageSize 分页大小
      */
-    public List<PAInfo> getPAFollowListFromServer(String username, int pageNum, int pageSize) {
-        List<PAInfo> list = new ArrayList<>();
+    public Map<String, PAInfo> getPAFollowListFromServer(String username, int pageNum, int pageSize) {
+        Map<String, PAInfo> map = new HashMap<>();
         Call<ResponseBody> call = paAPI.getPAFollowList(username, pageNum, pageSize);
         // 同步请求服务器
         try {
@@ -272,7 +274,8 @@ public class PAManager {
                     JSONArray array = jsonObject.optJSONArray("data");
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject object = array.optJSONObject(i);
-                        list.add(parsePAObject(object));
+                        PAInfo info = parsePAObject(object);
+                        map.put(info.getPaid(), info);
                     }
                 }
             } else {
@@ -284,7 +287,7 @@ public class PAManager {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return list;
+        return map;
     }
 
     /**
@@ -361,7 +364,7 @@ public class PAManager {
         info.setDescription(object.optString(PA_DESCRIPTION));
         info.setLogo(object.optString(PA_LOGO));
         if (object.has(PA_AGENT_USER)) {
-            info.setAgentUser(object.optString(PA_AGENT_USER));
+            info.setAgentUser(object.optString(PA_AGENT_USER).toLowerCase());
         }
         if (object.has(PA_MENU)) {
             info.setMenu(object.optJSONArray(PA_MENU));

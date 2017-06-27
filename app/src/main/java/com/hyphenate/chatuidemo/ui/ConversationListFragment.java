@@ -18,6 +18,7 @@ import com.hyphenate.chat.EMConversation;
 import com.hyphenate.chat.EMConversation.EMConversationType;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chatuidemo.Constant;
+import com.hyphenate.chatuidemo.DemoHelper;
 import com.hyphenate.chatuidemo.R;
 import com.hyphenate.chatuidemo.db.InviteMessgeDao;
 import com.hyphenate.easeui.model.EaseAtMessageHelper;
@@ -48,12 +49,15 @@ public class ConversationListFragment extends EaseConversationListFragment{
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 EMConversation conversation = conversationListView.getItem(position);
                 String username = conversation.conversationId();
-                if (username.equals(EMClient.getInstance().getCurrentUser()))
+                if (username.equals(EMClient.getInstance().getCurrentUser())){
                     Toast.makeText(getActivity(), R.string.Cant_chat_with_yourself, Toast.LENGTH_SHORT).show();
-                else {
+                }else {
                     // start chat acitivity
                     Intent intent = new Intent(getActivity(), ChatActivity.class);
-                    if(conversation.isGroup()){
+                    if(DemoHelper.getInstance().getFollowPAAgentUserMap().containsKey(username)){
+                        intent.putExtra(Constant.EXTRA_CHAT_TYPE, Constant.CHATTYPE_PA);
+                        intent.putExtra("paid", DemoHelper.getInstance().getFollowPAAgentUserMap().get(username).getPaid());
+                    }else if(conversation.isGroup()){
                         if(conversation.getType() == EMConversationType.ChatRoom){
                             // it's group chat
                             intent.putExtra(Constant.EXTRA_CHAT_TYPE, Constant.CHATTYPE_CHATROOM);

@@ -53,6 +53,16 @@ public class DbOpenHelper extends SQLiteOpenHelper{
             + UserDao.PREF_TABLE_NAME + " ("
             + UserDao.COLUMN_NAME_DISABLED_GROUPS + " TEXT, "
             + UserDao.COLUMN_NAME_DISABLED_IDS + " TEXT);";
+
+	// 公众号信息表
+	private static final String CREATE_PA_TABLE = "CREATE TABLE "
+			+ PADao.TB_NAME + "("
+			+ PADao.COL_PAID + " TEXT PRIMARY KEY, "
+			+ PADao.COL_NAME + " TEXT, "
+			+ PADao.COL_DESCRIPTION + " TEXT, "
+			+ PADao.COL_LOGO + " TEXT, "
+			+ PADao.COL_AGENT_USER + " TEXT, "
+			+ PADao.COL_MENU + " TEXT);";
 	
 	private DbOpenHelper(Context context) {
 		super(context, getUserDatabaseName(), null, DATABASE_VERSION);
@@ -75,6 +85,7 @@ public class DbOpenHelper extends SQLiteOpenHelper{
 		db.execSQL(INIVTE_MESSAGE_TABLE_CREATE);
 		db.execSQL(CREATE_PREF_TABLE);
 		db.execSQL(ROBOT_TABLE_CREATE);
+		db.execSQL(CREATE_PA_TABLE);
 		
 	}
 
